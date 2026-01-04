@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEAP学習アプリ P4 W4</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Tinos:wght@700&display=swap');
+body {
+background-color: #007BFF; /* ビビットなブルー */
+font-family: 'Noto Sans JP', sans-serif;
+}
+
+/* 英語フォントをTimes New Roman風に設定 */
+.font-english {
+font-family: 'Tinos', 'Times New Roman', serif;
+font-weight: 700;
+font-size: 1.25rem; /* 20px */
+line-height: 1.75rem; /* 28px */
+}
+
+.answer-span {
+color: #DC2626; /* 赤色 */
+font-weight: 700;
+display: none;
+}
+
+.underline-span {
+text-decoration: underline;
+text-underline-offset: 4px;
+display: inline;
+}
+
+.show-answer .answer-span {
+display: inline;
+}
+
+.show-answer .underline-span {
+display: none;
+}
+.explanation {
+display: none;
+white-space: pre-wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+.btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+/* モバイルでのボタン調整 */
+@media (max-width: 640px) {
+    #control-panel {
+        padding: 0.5rem;
+    }
+    #control-panel button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
+</head>
+<body class="text-gray-800">
+
+<div id="app-container" class="container mx-auto p-4 md:p-8 max-w-4xl">
+<header class="text-center mb-8 bg-blue-500 p-4 rounded-xl shadow-lg">
+<h1 class="text-2xl md:text-3xl font-bold text-white">LEAP 学習アプリ</h1>
+<h2 id="app-subtitle" class="text-xl md:text-2xl font-bold text-white">Part 4 Week 4 (No.1621-1694)</h2>
+</header>
+
+<main class="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-lg mb-28">
+<div class="flex justify-end mb-6">
+    <button id="start-quiz-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">
+    ランダムテスト
+    </button>
+</div>
+
+<div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+    <h3 class="font-bold text-lg mb-2">選択した問題でPDFを作成</h3>
+    <p class="text-gray-600 mb-4">学習したい問題のチェックボックスを選択してから、下のボタンを押してください。</p>
+    <div class="flex items-center mb-4">
+        <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+        <label for="select-all-checkbox" class="ml-2 block text-sm text-gray-900">すべて選択 / 解除</label>
+    </div>
+    <div class="flex justify-center">
+        <button id="open-pdf-modal-btn" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">PDFダウンロードの種類を選択</button>
+    </div>
+</div>
+
+
+<div id="sentence-list" class="space-y-6">
+<!-- センテンスがJSで挿入されます -->
+</div>
+</main>
+</div>
+
+<!-- コントロールパネル -->
+<div id="control-panel" class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md p-4 border-t-2 border-gray-200 shadow-2xl flex justify-center items-center space-x-2 md:space-x-4">
+<button id="toggle-answer-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">表示/非表示</button>
+<button id="play-sound-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">音声再生</button>
+<button id="record-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">録音評価</button>
+<button id="toggle-explanation-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">語の意味</button>
+</div>
+
+<!-- メッセージ/スコア用モーダル -->
+<div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+<div id="message-content" class="bg-white p-8 rounded-lg shadow-xl text-center">
+<!-- コンテンツはJSで挿入されます -->
+</div>
+</div>
+<!-- クイズ用モーダル -->
+<div id="quiz-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-40 p-4">
+<div class="bg-white w-full max-w-2xl p-8 rounded-2xl shadow-2xl relative">
+<button id="close-quiz-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl font-bold">&times;</button>
+<div id="quiz-content">
+<!-- コンテンツはJSで挿入されます -->
+</div>
+</div>
+</div>
+
+<!-- PDFダウンロード選択モーダル -->
+<div id="pdf-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div class="relative mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">ダウンロードするPDFの種類を選択</h3>
+            <div class="mt-4 px-7 py-3 space-y-3">
+                <button id="download-list-btn" class="btn btn-primary w-full justify-start">1. 完全な単語のリスト</button>
+                <button id="download-en-quiz-btn" class="btn btn-primary w-full justify-start">2. 英語の単語を解答する問題</button>
+                <button id="download-ja-quiz-btn" class="btn btn-primary w-full justify-start">3. 単語の日本語訳を解答する問題</button>
+                <button id="download-mixed-quiz-btn" class="btn btn-primary w-full justify-start">4. 英語と日本語が混在した問題</button>
+                <button id="download-sentence-quiz-btn" class="btn btn-primary w-full justify-start">5. 例文の穴埋め問題</button>
+                <button id="download-sentence-mixed-quiz-btn" class="btn btn-primary w-full justify-start">6. 例文の混合問題 (穴埋め/和訳)</button>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="close-modal-btn" class="btn btn-secondary w-full">キャンセル</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- App State ---
+// P2W5 データ (No.584-626)
+const chapterData = [
+    {
+        "id": "1621",
+        "answer": "stimulate",
+        "explanation": "[他] ～を刺激する",
+        "en": "Light stimulates plant growth.",
+        "ja": "光に刺激されて植物は育つ（光が植物の成長を刺激する）．"
+    },
+    {
+        "id": "1622-1",
+        "answer": "animate",
+        "explanation": "[他] ①～を活気づける　②～をアニメ化する",
+        "en": "animate the discussion",
+        "ja": "議論を活気づける"
+    },
+    {
+        "id": "1622-2",
+        "answer": "animate",
+        "explanation": "[他] ①～を活気づける　②～をアニメ化する",
+        "en": "an animated Disney film",
+        "ja": "ディズニーのアニメ映画（アニメ化された映画）"
+    },
+    {
+        "id": "1623-1",
+        "answer": "spur",
+        "explanation": "[他] ①～を駆り立てる，促す　[名] ②拍車，刺激，動機",
+        "en": "spur economic growth",
+        "ja": "経済成長を促す"
+    },
+    {
+        "id": "1623-2",
+        "answer": "spur",
+        "explanation": "[他] ①～を駆り立てる，促す　[名] ②拍車，刺激，動機",
+        "en": "on the spur of the moment",
+        "ja": "その場の勢いで"
+    },
+    {
+        "id": "1624-1",
+        "answer": "urge",
+        "explanation": "[他] ①～をせき立てる，～に強く勧める　[名] ②（何かがしたい）衝動",
+        "en": "urge him to rest",
+        "ja": "彼に休むよう強く勧める"
+    },
+    {
+        "id": "1624-2",
+        "answer": "urge",
+        "explanation": "[他] ①～をせき立てる，～に強く勧める　[名] ②（何かがしたい）衝動",
+        "en": "have an urge to eat some fish",
+        "ja": "魚が食べたくて仕方ない（魚を食べたい衝動を持つ）"
+    },
+    {
+        "id": "1625",
+        "answer": "compel",
+        "explanation": "[他] （A to do）（A）に（～することを）強制する",
+        "en": "feel compelled to resign because of the scandal",
+        "ja": "スキャンダルのため辞職せざるを得ない（辞職を強いられている）と感じる"
+    },
+    {
+        "id": "1626-1",
+        "answer": "blur",
+        "explanation": "[他] ①～をぼやかす　[自] ②ぼやける",
+        "en": "Tears blurred my vision.",
+        "ja": "涙で視界がぼやけた（視界をぼやかした）．"
+    },
+    {
+        "id": "1626-2",
+        "answer": "blur",
+        "explanation": "[他] ①～をぼやかす　[自] ②ぼやける",
+        "en": "My vision has blurred.",
+        "ja": "視界がぼやけた．"
+    },
+    {
+        "id": "1627-1",
+        "answer": "divert",
+        "explanation": "[他] ①（川など）の方向を変える　②（注意など）をそらす",
+        "en": "divert the course of a stream",
+        "ja": "川の流れ（の進路）を変える"
+    },
+    {
+        "id": "1627-2",
+        "answer": "divert",
+        "explanation": "[他] ①（川など）の方向を変える　②（注意など）をそらす",
+        "en": "divert his attention",
+        "ja": "彼の注意をそらす"
+    },
+    {
+        "id": "1628-1",
+        "answer": "reverse",
+        "explanation": "[他] ①～を逆転する，覆す　[名] ②逆　[形] ③逆の",
+        "en": "reverse the decision",
+        "ja": "その決定を覆す"
+    },
+    {
+        "id": "1628-2",
+        "answer": "reverse",
+        "explanation": "[他] ①～を逆転する，覆す　[名] ②逆　[形] ③逆の",
+        "en": "The reverse is the case.",
+        "ja": "その逆が正しい．"
+    },
+    {
+        "id": "1628-3",
+        "answer": "reverse",
+        "explanation": "[他] ①～を逆転する，覆す　[名] ②逆　[形] ③逆の",
+        "en": "in reverse order",
+        "ja": "逆の順番で"
+    },
+    {
+        "id": "1629",
+        "answer": "overshadow",
+        "explanation": "[他] ～の影を薄くさせる",
+        "en": "His performance was overshadowed by his sister’s.",
+        "ja": "彼の成績は姉の影に隠れてしまった．"
+    },
+    {
+        "id": "1630",
+        "answer": "worsen",
+        "explanation": "[他] ～を悪化させる",
+        "en": "worsen the problem",
+        "ja": "その問題を悪化させる"
+    },
+    {
+        "id": "1631",
+        "answer": "jeopardize",
+        "explanation": "[他] （生命，経歴，制度など）を危険にさらす",
+        "en": "jeopardize the country’s economic future",
+        "ja": "その国の経済の将来を危険にさらす"
+    },
+    {
+        "id": "1632-1",
+        "answer": "supplement",
+        "explanation": "[他] （栄養，収入など）を補う　[名] ②補充，栄養補助食品　③付録",
+        "en": "supplement my salary by working part-time",
+        "ja": "アルバイトをして給料を補う"
+    },
+    {
+        "id": "1632-2",
+        "answer": "supplement",
+        "explanation": "[他] （栄養，収入など）を補う　[名] ②補充，栄養補助食品　③付録",
+        "en": "take a vitamin supplement",
+        "ja": "ビタミンの栄養補助食品をとる"
+    },
+    {
+        "id": "1632-3",
+        "answer": "supplement",
+        "explanation": "[他] （栄養，収入など）を補う　[名] ②補充，栄養補助食品　③付録",
+        "en": "a magazine supplement",
+        "ja": "雑誌の付録"
+    },
+    {
+        "id": "1633",
+        "answer": "pose",
+        "explanation": "[他] ～をもたらす",
+        "en": "Pollution poses a threat to fish.",
+        "ja": "汚染が魚に脅威をもたらす．"
+    },
+    {
+        "id": "1634-1",
+        "answer": "induce",
+        "explanation": "[他] ①～を引き起こす　②（（人） to do）（人）に～するよう説得する",
+        "en": "induce childbirth",
+        "ja": "分娩を誘発する"
+    },
+    {
+        "id": "1634-2",
+        "answer": "induce",
+        "explanation": "[他] ①～を引き起こす　②（（人） to do）（人）に～するよう説得する",
+        "en": "induce him to give up smoking",
+        "ja": "彼を説得して喫煙を止めさせる"
+    },
+    {
+        "id": "1635-1",
+        "answer": "betray",
+        "explanation": "[他] ①～を裏切る　②～を漏らす，（うっかり）さらけ出す",
+        "en": "betray her close friend",
+        "ja": "彼女の親友を裏切る"
+    },
+    {
+        "id": "1635-2",
+        "answer": "betray",
+        "explanation": "[他] ①～を裏切る　②～を漏らす，（うっかり）さらけ出す",
+        "en": "Her voice betrayed her nervousness.",
+        "ja": "彼女は声で緊張していることがばれた（声が緊張をさらけ出した）．"
+    },
+    {
+        "id": "1636-1",
+        "answer": "bully",
+        "explanation": "[他] ①～をいじめる　[名] ②いじめっ子",
+        "en": "Don’t bully small children.",
+        "ja": "幼い子どもたちをいじめるな．"
+    },
+    {
+        "id": "1636-2",
+        "answer": "bully",
+        "explanation": "[他] ①～をいじめる　[名] ②いじめっ子",
+        "en": "He was a bully in high school.",
+        "ja": "彼は高校時代，いじめっ子だった．"
+    },
+    {
+        "id": "1637",
+        "answer": "disregard",
+        "explanation": "[他] ～を無視する",
+        "en": "disregard his advice",
+        "ja": "彼の忠告を無視する"
+    },
+    {
+        "id": "1638-1",
+        "answer": "squeeze",
+        "explanation": "[他] ①（果汁など）を搾る　②（手，指で）～を強く押す",
+        "en": "squeeze juice from an orange",
+        "ja": "オレンジからジュースを搾る"
+    },
+    {
+        "id": "1638-2",
+        "answer": "squeeze",
+        "explanation": "[他] ①（果汁など）を搾る　②（手，指で）～を強く押す",
+        "en": "squeeze people into a train",
+        "ja": "列車内に人々を押し込む"
+    },
+    {
+        "id": "1639-1",
+        "answer": "rub",
+        "explanation": "[他] ①～をこする　[自] ②（against ～）（～に）こすりつける",
+        "en": "The dog rubbed his head against my leg.",
+        "ja": "イヌが私の脚に頭をこすりつけた．"
+    },
+    {
+        "id": "1639-2",
+        "answer": "rub",
+        "explanation": "[他] ①～をこする　[自] ②（against ～）（～に）こすりつける",
+        "en": "The cat rubbed against my leg.",
+        "ja": "ネコが私の脚に体をこすりつけてきた．"
+    },
+    {
+        "id": "1640",
+        "answer": "smash",
+        "explanation": "[他] ～を粉砕する",
+        "en": "smash the showcases",
+        "ja": "ショーケースを粉砕する"
+    },
+    {
+        "id": "1641-1",
+        "answer": "insert",
+        "explanation": "[他] ①～を差し込む　②（語句など）を書き込む",
+        "en": "insert a ticket into an automatic ticket gate",
+        "ja": "自動改札機に切符を入れる"
+    },
+    {
+        "id": "1641-2",
+        "answer": "insert",
+        "explanation": "[他] ①～を差し込む　②（語句など）を書き込む",
+        "en": "insert my comments in the space",
+        "ja": "空欄にコメントを書き込む"
+    },
+    {
+        "id": "1642",
+        "answer": "detach",
+        "explanation": "[他] （A from B） （A）を（Bから）切り離す",
+        "en": "detach the hood from a jacket",
+        "ja": "上着からフードを取り外す"
+    },
+    {
+        "id": "1643-1",
+        "answer": "withdraw",
+        "explanation": "[他] ①～を引っ込める　②（預金など）を引き出す　[自] ③退く",
+        "en": "withdraw a product from the market",
+        "ja": "市場から製品を回収する"
+    },
+    {
+        "id": "1643-2",
+        "answer": "withdraw",
+        "explanation": "[他] ①～を引っ込める　②（預金など）を引き出す　[自] ③退く",
+        "en": "withdraw $300 from an ATM",
+        "ja": "ATM から300ドルを引き出す"
+    },
+    {
+        "id": "1643-3",
+        "answer": "withdraw",
+        "explanation": "[他] ①～を引っ込める　②（預金など）を引き出す　[自] ③退く",
+        "en": "withdraw from the war zone",
+        "ja": "戦闘地帯から撤退する"
+    },
+    {
+        "id": "1644",
+        "answer": "compile",
+        "explanation": "[他] ～をまとめる，（辞書などを）編纂する",
+        "en": "compile data for a report",
+        "ja": "報告書のためにデータをまとめる"
+    },
+    {
+        "id": "1645-1",
+        "answer": "browse",
+        "explanation": "[自] ①拾い読みする　[他] ②～を拾い読みする",
+        "en": "browse through the photographs",
+        "ja": "写真にざっと目を通す"
+    },
+    {
+        "id": "1645-2",
+        "answer": "browse",
+        "explanation": "[自] ①拾い読みする　[他] ②～を拾い読みする",
+        "en": "browse the internet",
+        "ja": "インターネットを閲覧する"
+    },
+    {
+        "id": "1646",
+        "answer": "manipulate",
+        "explanation": "[他] ～を操作する",
+        "en": "manipulate public opinion",
+        "ja": "世論を操作する"
+    },
+    {
+        "id": "1647-1",
+        "answer": "implement",
+        "explanation": "[他] ①（契約，計画など）を実行する　[名] ②（単純な）道具",
+        "en": "implement political reform",
+        "ja": "政治改革を実行する"
+    },
+    {
+        "id": "1647-2",
+        "answer": "implement",
+        "explanation": "[他] ①（契約，計画など）を実行する　[名] ②（単純な）道具",
+        "en": "farming implements",
+        "ja": "農機具"
+    },
+    {
+        "id": "1648-1",
+        "answer": "execute",
+        "explanation": "[他] ①～を遂行する，実行する　②～を処刑する",
+        "en": "execute the plan from Monday",
+        "ja": "月曜日からその計画を実行する"
+    },
+    {
+        "id": "1648-2",
+        "answer": "execute",
+        "explanation": "[他] ①～を遂行する，実行する　②～を処刑する",
+        "en": "execute the murderer",
+        "ja": "その殺人犯を処刑する"
+    },
+    {
+        "id": "1649-1",
+        "answer": "host",
+        "explanation": "[他] ①（大会など）を主催する　[名] ②（a － of）多くの　③（客を接待する）主人（＊女性も含む），主催者，開催地，《生物》宿主",
+        "en": "host the Olympic Games",
+        "ja": "オリンピックを主催する"
+    },
+    {
+        "id": "1649-2",
+        "answer": "host",
+        "explanation": "[他] ①（大会など）を主催する　[名] ②（a － of）多くの　③（客を接待する）主人（＊女性も含む），主催者，開催地，《生物》宿主",
+        "en": "a host of difficulties",
+        "ja": "多くの困難"
+    },
+    {
+        "id": "1649-3",
+        "answer": "host",
+        "explanation": "[他] ①（大会など）を主催する　[名] ②（a － of）多くの　③（客を接待する）主人（＊女性も含む），主催者，開催地，《生物》宿主",
+        "en": "Our host greeted us at the door.",
+        "ja": "主催者が玄関で私たちに挨拶した．"
+    },
+    {
+        "id": "1650-1",
+        "answer": "mount",
+        "explanation": "[他] ①～を据え付ける　②（馬，自転車）に乗る　[自] ③増加する",
+        "en": "mount a new television on the wall",
+        "ja": "新しいテレビを壁に取り付ける"
+    },
+    {
+        "id": "1650-2",
+        "answer": "mount",
+        "explanation": "[他] ①～を据え付ける　②（馬，自転車）に乗る　[自] ③増加する",
+        "en": "mount a horse",
+        "ja": "馬に乗る"
+    },
+    {
+        "id": "1650-3",
+        "answer": "mount",
+        "explanation": "[他] ①～を据え付ける　②（馬，自転車）に乗る　[自] ③増加する",
+        "en": "Tension is mounting in the Middle East.",
+        "ja": "中東で緊張が高まっている．"
+    },
+    {
+        "id": "1651-1",
+        "answer": "discharge",
+        "explanation": "[他] ①～を排出する　②（職務，任地などから）～を解放する",
+        "en": "discharge black smoke",
+        "ja": "黒い煙を出す"
+    },
+    {
+        "id": "1651-2",
+        "answer": "discharge",
+        "explanation": "[他] ①～を排出する　②（職務，任地などから）～を解放する",
+        "en": "be discharged from the navy",
+        "ja": "海軍を除隊になる（海軍から解放される）"
+    },
+    {
+        "id": "1652-1",
+        "answer": "drain",
+        "explanation": "[他] ①～の水を抜く　②～の水分を切る　[自] ③（液体が）流出する，乾く",
+        "en": "drain the bathtub",
+        "ja": "風呂の水を抜く"
+    },
+    {
+        "id": "1652-2",
+        "answer": "drain",
+        "explanation": "[他] ①～の水を抜く　②～の水分を切る　[自] ③（液体が）流出する，乾く",
+        "en": "drain the cooked spaghetti",
+        "ja": "ゆでたスパゲッティの水分を切る"
+    },
+    {
+        "id": "1652-3",
+        "answer": "drain",
+        "explanation": "[他] ①～の水を抜く　②～の水分を切る　[自] ③（液体が）流出する，乾く",
+        "en": "This playground does not drain well.",
+        "ja": "この運動場は水はけがよくない．"
+    },
+    {
+        "id": "1653-1",
+        "answer": "soak",
+        "explanation": "[他] ①～を浸す　②（up）（日光，考えなど）を吸収する",
+        "en": "get soaked in the rain",
+        "ja": "雨でびしょ濡れになる"
+    },
+    {
+        "id": "1653-2",
+        "answer": "soak",
+        "explanation": "[他] ①～を浸す　②（up）（日光，考えなど）を吸収する",
+        "en": "soak up new ideas",
+        "ja": "新しい考えを吸収する"
+    },
+    {
+        "id": "1654-1",
+        "answer": "dip",
+        "explanation": "[他] ①～を（ちょっと）つける，浸す　②～を少し下げる",
+        "en": "dip sashimi in soy sauce",
+        "ja": "刺身をしょう油につける"
+    },
+    {
+        "id": "1654-2",
+        "answer": "dip",
+        "explanation": "[他] ①～を（ちょっと）つける，浸す　②～を少し下げる",
+        "en": "dip my head and speak into the microphone",
+        "ja": "頭を少し下げて，マイクに向かって話をする"
+    },
+    {
+        "id": "1655-1",
+        "answer": "suspend",
+        "explanation": "[他] ①～を吊るす　②～を中断する　③～を停職［停学］にする",
+        "en": "a lamp suspended from the ceiling",
+        "ja": "天井から吊るされているランプ"
+    },
+    {
+        "id": "1655-2",
+        "answer": "suspend",
+        "explanation": "[他] ①～を吊るす　②～を中断する　③～を停職［停学］にする",
+        "en": "suspend the ferry service",
+        "ja": "フェリーの運行を中断する"
+    },
+    {
+        "id": "1655-3",
+        "answer": "suspend",
+        "explanation": "[他] ①～を吊るす　②～を中断する　③～を停職［停学］にする",
+        "en": "be suspended from school",
+        "ja": "停学になる（停学にさせられる）"
+    },
+    {
+        "id": "1656-1",
+        "answer": "extract",
+        "explanation": "[他] ①～を取り出す，抽出する　[名] ②抽出したもの，抜粋",
+        "en": "extract oil from olives",
+        "ja": "オリーブの実から油を抽出する"
+    },
+    {
+        "id": "1656-2",
+        "answer": "extract",
+        "explanation": "[他] ①～を取り出す，抽出する　[名] ②抽出したもの，抜粋",
+        "en": "extracts from the novel",
+        "ja": "その小説の抜粋"
+    },
+    {
+        "id": "1657",
+        "answer": "slap",
+        "explanation": "[他] ～を平手打ちする",
+        "en": "slap him in the face",
+        "ja": "彼の顔を平手打ちする"
+    },
+    {
+        "id": "1658-1",
+        "answer": "embrace",
+        "explanation": "[他] ①～を抱擁する　②（思想など）を受け入れる",
+        "en": "embrace his daughter",
+        "ja": "彼の娘を抱擁する"
+    },
+    {
+        "id": "1658-2",
+        "answer": "embrace",
+        "explanation": "[他] ①～を抱擁する　②（思想など）を受け入れる",
+        "en": "embrace many different values",
+        "ja": "多くのさまざまな価値観を受け入れる"
+    },
+    {
+        "id": "1659",
+        "answer": "embark",
+        "explanation": "[自] （on ～）（～に）着手する，乗り込む",
+        "en": "embark on a huge project",
+        "ja": "巨大なプロジェクトに着手する"
+    },
+    {
+        "id": "1660",
+        "answer": "intervene",
+        "explanation": "[自] （in ～）（～に）介入する",
+        "en": "intervene in disputes between husbands and wives",
+        "ja": "夫婦間の争いに介入する"
+    },
+    {
+        "id": "1661-1",
+        "answer": "penetrate",
+        "explanation": "[他] ①～に入り込む　②～を貫通する　[自] ③貫通する，入る",
+        "en": "penetrate new markets",
+        "ja": "新たな市場に入り込む"
+    },
+    {
+        "id": "1661-2",
+        "answer": "penetrate",
+        "explanation": "[他] ①～に入り込む　②～を貫通する　[自] ③貫通する，入る",
+        "en": "The bullet penetrated his leg.",
+        "ja": "弾丸が彼の足を貫通した．"
+    },
+    {
+        "id": "1661-3",
+        "answer": "penetrate",
+        "explanation": "[他] ①～に入り込む　②～を貫通する　[自] ③貫通する，入る",
+        "en": "penetrate deep into the ground",
+        "ja": "地中深くに入り込む"
+    },
+    {
+        "id": "1662",
+        "answer": "intrude",
+        "explanation": "[自] （on ～）（～に）立ち入る",
+        "en": "Don’t intrude on her privacy.",
+        "ja": "彼女のプライバシーに立ち入るな．"
+    },
+    {
+        "id": "1663",
+        "answer": "utilize",
+        "explanation": "[他] ～を利用する",
+        "en": "Solar energy can be utilized for various purposes.",
+        "ja": "太陽エネルギーはさまざまな目的で利用できる（利用され得る）．"
+    },
+    {
+        "id": "1664",
+        "answer": "embed",
+        "explanation": "[他] （in ...）（…に）～を埋め込む",
+        "en": "become deeply embedded in the organization",
+        "ja": "その組織の中に深く埋め込まれる"
+    },
+    {
+        "id": "1665",
+        "answer": "allocate",
+        "explanation": "[他] ～を割り当てる",
+        "en": "allocate him a suite",
+        "ja": "彼にスイートルームを割り当てる"
+    },
+    {
+        "id": "1666",
+        "answer": "coordinate",
+        "explanation": "[他] （活動など）をうまく調整する",
+        "en": "coordinate volunteers",
+        "ja": "ボランティアを統率する（活動をうまく調整する）"
+    },
+    {
+        "id": "1667",
+        "answer": "blink",
+        "explanation": "[自] まばたきする",
+        "en": "gaze at a screen without blinking",
+        "ja": "まばたき一つせず画面に見入る"
+    },
+    {
+        "id": "1668-1",
+        "answer": "spin",
+        "explanation": "[自] ①ぐるぐる回る　[他] ②～を回す　③～を紡ぐ",
+        "en": "My head is spinning with a fever.",
+        "ja": "熱で頭がくらくらする．"
+    },
+    {
+        "id": "1668-2",
+        "answer": "spin",
+        "explanation": "[自] ①ぐるぐる回る　[他] ②～を回す　③～を紡ぐ",
+        "en": "spin a top",
+        "ja": "こまを回す"
+    },
+    {
+        "id": "1668-3",
+        "answer": "spin",
+        "explanation": "[自] ①ぐるぐる回る　[他] ②～を回す　③～を紡ぐ",
+        "en": "spin cotton into threads",
+        "ja": "綿を紡いで糸にする"
+    },
+    {
+        "id": "1669-1",
+        "answer": "rotate",
+        "explanation": "[自] ①回転する　[他] ②～を回転させる",
+        "en": "The earth rotates on its axis.",
+        "ja": "地球は地軸を中心に自転する．"
+    },
+    {
+        "id": "1669-2",
+        "answer": "rotate",
+        "explanation": "[自] ①回転する　[他] ②～を回転させる",
+        "en": "rotate crops",
+        "ja": "作物を輪作する（回転させる）"
+    },
+    {
+        "id": "1670",
+        "answer": "scramble",
+        "explanation": "[自] 急いで動く",
+        "en": "scramble into a car",
+        "ja": "急いで車に乗り込む"
+    },
+    {
+        "id": "1671",
+        "answer": "vanish",
+        "explanation": "[自] 消える",
+        "en": "The magician vanished without trace.",
+        "ja": "そのマジシャンは跡形もなく消えた．"
+    },
+    {
+        "id": "1672-1",
+        "answer": "snap",
+        "explanation": "[自] ①ポキンと折れる　[他] ②～をポキンと折る，パチンと鳴らす",
+        "en": "The branch snapped in two.",
+        "ja": "その枝が2つに折れた．"
+    },
+    {
+        "id": "1672-2",
+        "answer": "snap",
+        "explanation": "[自] ①ポキンと折れる　[他] ②～をポキンと折る，パチンと鳴らす",
+        "en": "snap my fingers",
+        "ja": "指をパチンと鳴らす"
+    },
+    {
+        "id": "1673-1",
+        "answer": "rattle",
+        "explanation": "[自] ①ガタガタ鳴る　[他] ②～を鳴らす　[名] ③ガラガラ",
+        "en": "a rattling old bus",
+        "ja": "ガタガタ音がする古いバス"
+    },
+    {
+        "id": "1673-2",
+        "answer": "rattle",
+        "explanation": "[自] ①ガタガタ鳴る　[他] ②～を鳴らす　[名] ③ガラガラ",
+        "en": "rattle some change",
+        "ja": "（チャリンチャリンと）小銭を鳴らす"
+    },
+    {
+        "id": "1673-3",
+        "answer": "rattle",
+        "explanation": "[自] ①ガタガタ鳴る　[他] ②～を鳴らす　[名] ③ガラガラ",
+        "en": "a baby’s rattle",
+        "ja": "赤ん坊のガラガラ"
+    },
+    {
+        "id": "1674",
+        "answer": "cease",
+        "explanation": "[他] （to do[doing]）～しなくなる",
+        "en": "East Germany ceased to exist in 1990.",
+        "ja": "東ドイツは1990年に存在しなくなった．"
+    },
+    {
+        "id": "1675",
+        "answer": "haste",
+        "explanation": "[名] 急ぐこと〈不可算〉",
+        "en": "Haste makes waste.",
+        "ja": "急いては事を仕損じる（急ぐと損をする）．"
+    },
+    {
+        "id": "1676",
+        "answer": "conceal",
+        "explanation": "[他] ～を隠す",
+        "en": "The students concealed the facts from the teacher.",
+        "ja": "生徒たちは先生にその事実を隠した．"
+    },
+    {
+        "id": "1677-1",
+        "answer": "disguise",
+        "explanation": "[他] ①～を（偽装して）隠す　②（oneself as ～）～に変装する　[名] ③変装",
+        "en": "disguise my sorrow with a smile",
+        "ja": "笑顔で悲しみを隠す"
+    },
+    {
+        "id": "1677-2",
+        "answer": "disguise",
+        "explanation": "[他] ①～を（偽装して）隠す　②（oneself as ～）～に変装する　[名] ③変装",
+        "en": "disguise myself as a pirate",
+        "ja": "海賊に変装する"
+    },
+    {
+        "id": "1677-3",
+        "answer": "disguise",
+        "explanation": "[他] ①～を（偽装して）隠す　②（oneself as ～）～に変装する　[名] ③変装",
+        "en": "a princess in disguise",
+        "ja": "変装している王女"
+    },
+    {
+        "id": "1678",
+        "answer": "deceive",
+        "explanation": "[他] ～をだます",
+        "en": "I was deceived into believing that Kathy was a woman.",
+        "ja": "私はだまされて，キャシーは女性だと信じていた．"
+    },
+    {
+        "id": "1679-1",
+        "answer": "neglect",
+        "explanation": "[他] ①～を怠る，放置する　②（子ども）の世話をしない　[名] ③放置",
+        "en": "neglect my duty",
+        "ja": "義務を怠る"
+    },
+    {
+        "id": "1679-2",
+        "answer": "neglect",
+        "explanation": "[他] ①～を怠る，放置する　②（子ども）の世話をしない　[名] ③放置",
+        "en": "neglect a child",
+        "ja": "子どもの世話をしない"
+    },
+    {
+        "id": "1679-3",
+        "answer": "neglect",
+        "explanation": "[他] ①～を怠る，放置する　②（子ども）の世話をしない　[名] ③放置",
+        "en": "child abuse and neglect",
+        "ja": "児童の虐待と放置"
+    },
+    {
+        "id": "1680",
+        "answer": "evacuate",
+        "explanation": "[他] （しばしば受動態で）～を避難させる",
+        "en": "We were evacuated to the roof.",
+        "ja": "私たちは屋上に避難した．"
+    },
+    {
+        "id": "1681-1",
+        "answer": "coincide",
+        "explanation": "[自] ①（with ～）（～と）同時に起きる　②（with ～）（～と）一致する",
+        "en": "That day coincided with my birthday.",
+        "ja": "その日は私の誕生日と重なった（同時に起きた）．"
+    },
+    {
+        "id": "1681-2",
+        "answer": "coincide",
+        "explanation": "[自] ①（with ～）（～と）同時に起きる　②（with ～）（～と）一致する",
+        "en": "Her views coincided with ours.",
+        "ja": "彼女と我々の見解は一致していた．"
+    },
+    {
+        "id": "1682-1",
+        "answer": "prevail",
+        "explanation": "[自] ①（考え，習慣などが）普及している　②（最後に人，考えが）優勢となる",
+        "en": "Buddhism prevails[×is prevailing] throughout the country.",
+        "ja": "その国では仏教が隅々にまで普及している．"
+    },
+    {
+        "id": "1682-2",
+        "answer": "prevail",
+        "explanation": "[自] ①（考え，習慣などが）普及している　②（最後に人，考えが）優勢となる",
+        "en": "I considered lying, but common sense prevailed.",
+        "ja": "うそをつこうと思ったが，良識が勝った．"
+    },
+    {
+        "id": "1683",
+        "answer": "sustain",
+        "explanation": "[他] （生命など）を維持する，支える",
+        "en": "sustain[×support] life on Earth",
+        "ja": "地球上の生命を支える"
+    },
+    {
+        "id": "1684-1",
+        "answer": "linger",
+        "explanation": "[自] ①（いつまでも）残る　②（on）長居する",
+        "en": "A strong smell lingered in the elevator.",
+        "ja": "エレベーターの中に強烈な臭いが残っていた．"
+    },
+    {
+        "id": "1684-2",
+        "answer": "linger",
+        "explanation": "[自] ①（いつまでも）残る　②（on）長居する",
+        "en": "A lot of fans lingered (on) in the hall.",
+        "ja": "多くのファンがホールに残っていた．"
+    },
+    {
+        "id": "1685-1",
+        "answer": "revive",
+        "explanation": "[自] ①生き返る，よみがえる　[他] ②～を生き返らせる",
+        "en": "The economy is beginning to revive after the slump.",
+        "ja": "経済は不況以降もち直し始めている．"
+    },
+    {
+        "id": "1685-2",
+        "answer": "revive",
+        "explanation": "[自] ①生き返る，よみがえる　[他] ②～を生き返らせる",
+        "en": "revive the film industry",
+        "ja": "映画産業をよみがえらせる"
+    },
+    {
+        "id": "1686-1",
+        "answer": "resume",
+        "explanation": "[他] ①～を再開する　[自] ②再開する　[名] ③〈米〉履歴書　④概要，レジュメ",
+        "en": "resume work",
+        "ja": "仕事を再開する"
+    },
+    {
+        "id": "1686-2",
+        "answer": "resume",
+        "explanation": "[他] ①～を再開する　[自] ②再開する　[名] ③〈米〉履歴書　④概要，レジュメ",
+        "en": "The meeting has resumed.",
+        "ja": "会議が再開した．"
+    },
+    {
+        "id": "1686-3",
+        "answer": "resume",
+        "explanation": "[他] ①～を再開する　[自] ②再開する　[名] ③〈米〉履歴書　④概要，レジュメ",
+        "en": "Could you show me how to write a resume?",
+        "ja": "履歴書の書き方を教えていただけませんか．"
+    },
+    {
+        "id": "1686-4",
+        "answer": "resume",
+        "explanation": "[他] ①～を再開する　[自] ②再開する　[名] ③〈米〉履歴書　④概要，レジュメ",
+        "en": "a resume of the day’s events",
+        "ja": "その日の出来事の概要"
+    },
+    {
+        "id": "1687",
+        "answer": "outbreak",
+        "explanation": "[名] 発生，勃発",
+        "en": "an outbreak of smallpox",
+        "ja": "天然痘の発生"
+    },
+    {
+        "id": "1688",
+        "answer": "inspect",
+        "explanation": "[他] ～を検査する",
+        "en": "inspect the elevators regularly",
+        "ja": "定期的にエレベーターを検査する"
+    },
+    {
+        "id": "1689-1",
+        "answer": "expedition",
+        "explanation": "[名] ①（研究・探求・戦争目的の）探検，遠征　②探検隊",
+        "en": "an expedition to the North Pole",
+        "ja": "北極点への遠征"
+    },
+    {
+        "id": "1689-2",
+        "answer": "expedition",
+        "explanation": "[名] ①（研究・探求・戦争目的の）探検，遠征　②探検隊",
+        "en": "the Antarctic expedition",
+        "ja": "南極観測（探検）隊"
+    },
+    {
+        "id": "1690-1",
+        "answer": "enroll",
+        "explanation": "[自] ①（in ～）（～に）入学する　[他] ②（be －ed）在籍している",
+        "en": "enroll in yoga classes",
+        "ja": "ヨガのクラスに入る"
+    },
+    {
+        "id": "1690-2",
+        "answer": "enroll",
+        "explanation": "[自] ①（in ～）（～に）入学する　[他] ②（be －ed）在籍している",
+        "en": "2,000 students are enrolled at this college.",
+        "ja": "この大学には2,000人の学生が在籍している．"
+    },
+    {
+        "id": "1691-1",
+        "answer": "discipline",
+        "explanation": "[他] ①（体罰などで）～を躾ける　[名] ②躾，規律　③（学問）分野",
+        "en": "discipline children",
+        "ja": "子どもを躾ける"
+    },
+    {
+        "id": "1691-2",
+        "answer": "discipline",
+        "explanation": "[他] ①（体罰などで）～を躾ける　[名] ②躾，規律　③（学問）分野",
+        "en": "keep[break] discipline",
+        "ja": "規律を守る［破る］"
+    },
+    {
+        "id": "1691-3",
+        "answer": "discipline",
+        "explanation": "[他] ①（体罰などで）～を躾ける　[名] ②躾，規律　③（学問）分野",
+        "en": "an academic discipline",
+        "ja": "学問分野"
+    },
+    {
+        "id": "1692-1",
+        "answer": "tuition",
+        "explanation": "[名] ①〈米〉授業料　②（少人数での）授業",
+        "en": "pay my tuition by bank transfer",
+        "ja": "授業料を銀行振込で払う"
+    },
+    {
+        "id": "1692-2",
+        "answer": "tuition",
+        "explanation": "[名] ①〈米〉授業料　②（少人数での）授業",
+        "en": "give tuition in Russian",
+        "ja": "ロシア語の授業をする"
+    },
+    {
+        "id": "1693-1",
+        "answer": "ethic",
+        "explanation": "[名] ①（－s）（社会や職業上の）倫理（観）　②（伝統的に守られた）倫理",
+        "en": "medical ethics",
+        "ja": "医療倫理"
+    },
+    {
+        "id": "1693-2",
+        "answer": "ethic",
+        "explanation": "[名] ①（－s）（社会や職業上の）倫理（観）　②（伝統的に守られた）倫理",
+        "en": "the old ethic of hard work",
+        "ja": "勤勉という古い倫理観"
+    },
+    {
+        "id": "1694-1",
+        "answer": "psychology",
+        "explanation": "[名] ①心理学　②心理",
+        "en": "a book on psychology",
+        "ja": "心理学の本"
+    },
+    {
+        "id": "1694-2",
+        "answer": "psychology",
+        "explanation": "[名] ①心理学　②心理",
+        "en": "the psychology of five-year-olds",
+        "ja": "5歳児の心理"
+    }
+];
+
+let activeSentenceElement = null;
+let selectedSentences = new Set();
+
+// --- DOM Elements ---
+const sentenceList = document.getElementById('sentence-list');
+const appSubtitle = document.getElementById('app-subtitle');
+const toggleAnswerBtn = document.getElementById('toggle-answer-btn');
+const playSoundBtn = document.getElementById('play-sound-btn');
+const recordBtn = document.getElementById('record-btn');
+const toggleExplanationBtn = document.getElementById('toggle-explanation-btn');
+const startQuizBtn = document.getElementById('start-quiz-btn');
+const messageModal = document.getElementById('message-modal');
+const messageContent = document.getElementById('message-content');
+const quizModal = document.getElementById('quiz-modal');
+const closeQuizBtn = document.getElementById('close-quiz-btn');
+const quizContent = document.getElementById('quiz-content');
+const selectAllCheckbox = document.getElementById('select-all-checkbox');
+
+const pdfModal = document.getElementById('pdf-modal');
+const openPdfModalBtn = document.getElementById('open-pdf-modal-btn');
+const closeModalBtn = document.getElementById('close-modal-btn');
+
+
+// --- Voice Synthesis ---
+let synthesisVoice = null;
+
+function setSynthesisVoice() {
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        synthesisVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Google')) ||
+                         voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Microsoft')) ||
+                         voices.find(voice => voice.lang === 'en-US');
+    }
+}
+
+setSynthesisVoice();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = setSynthesisVoice;
+}
+
+
+// --- Functions ---
+
+function findAnswerFormInSentence(enSentence, answer) {
+    const originalWords = enSentence.split(' ');
+    const answerLower = answer.toLowerCase();
+
+    // LEAP特有の不規則活用やフレーズ対応
+    const irregularVerbs = {
+        'deal': 'dealt',
+        'bind': 'bound',
+        'bend': 'bent',
+        'fix': 'fixed',
+        'promote': 'promoted',
+        'extend': 'extended',
+        'spread': 'spread',
+        'bump': 'bumped'
+    };
+
+    const forms = [
+        answerLower,
+        answerLower + 's',
+        answerLower + 'es',
+        answerLower + 'ed',
+        answerLower + 'ing',
+        answerLower.endsWith('e') ? answerLower.slice(0, -1) + 'ing' : '',
+        answerLower.endsWith('e') ? answerLower + 'd' : '',
+        irregularVerbs[answerLower] || ''
+    ].filter(f => f !== '');
+    
+    for (let i = 0; i < originalWords.length; i++) {
+        const word = originalWords[i].toLowerCase().replace(/[.,!?]$/, '');
+        if (forms.includes(word)) {
+            return originalWords[i]; 
+        }
+    }
+
+    // どの形式も見つからない場合、部分一致で検索
+    const fallback = originalWords.find(w => w.toLowerCase().includes(answerLower));
+    return fallback || answer; 
+}
+
+
+function formatEnglishSentence(enSentence, answer) {
+    const blank = '__________';
+    const actualWord = findAnswerFormInSentence(enSentence, answer);
+
+    if (actualWord) {
+        const answerHtml = `<span class="answer-span">${actualWord}</span>`;
+        const underlineHtml = `<span class="underline-span">${blank}</span>`;
+        
+        // 単語として一致する箇所を置換
+        const words = enSentence.split(' ');
+        let replaced = false; 
+        const processedWords = words.map(word => {
+            if (!replaced && word.replace(/[.,!?]$/, '') === actualWord.replace(/[.,!?]$/, '')) {
+                 replaced = true;
+                 const punctuation = word.match(/[.,!?]$/);
+                 return `<span class="answer-span">${word.replace(/[.,!?]$/, '')}</span><span class="underline-span">${blank}</span>${punctuation ? punctuation[0] : ''}`;
+            }
+            return word; 
+        });
+
+        let replacedSentence = processedWords.join(' ');
+        if (!replaced) {
+             replacedSentence = enSentence.replace(actualWord, `${answerHtml}${underlineHtml}`);
+        }
+        return replacedSentence;
+    }
+    return enSentence;
+}
+
+
+function renderChapter() {
+    sentenceList.innerHTML = '';
+    if (chapterData.length === 0) return;
+
+    chapterData.forEach(item => {
+        const sentenceDiv = document.createElement('div');
+        sentenceDiv.className = 'sentence-item p-4 border border-gray-200 rounded-lg bg-white transition-shadow duration-300 hover:shadow-md';
+        sentenceDiv.dataset.id = item.id;
+        sentenceDiv.dataset.fullSentence = item.en;
+
+        const englishSentenceHtml = formatEnglishSentence(item.en, item.answer);
+
+        sentenceDiv.innerHTML = `
+        <div class="flex items-start space-x-4">
+            <input type="checkbox" class="sentence-checkbox mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" data-id="${item.id}">
+            <span class="text-lg font-bold text-gray-400 w-16">${item.id}</span>
+            <div class="flex-1 cursor-pointer">
+                <p class="mb-2 text-gray-700 font-bold">${item.ja}</p>
+                <p class="font-english">${englishSentenceHtml}</p>
+                <div class="explanation mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-gray-700 rounded-r-lg">
+                ${item.explanation}
+                </div>
+            </div>
+        </div>
+        `;
+        sentenceList.appendChild(sentenceDiv);
+    });
+    
+    document.querySelectorAll('.sentence-item .flex-1').forEach(item => {
+        item.addEventListener('click', (e) => {
+             const sentenceWrapper = e.currentTarget.closest('.sentence-item');
+            if (activeSentenceElement) {
+                activeSentenceElement.classList.remove('ring-2', 'ring-blue-400', 'shadow-xl');
+            }
+            activeSentenceElement = sentenceWrapper;
+            activeSentenceElement.classList.add('ring-2', 'ring-blue-400', 'shadow-xl');
+        });
+    });
+
+    document.querySelectorAll('.sentence-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            const sentenceId = e.target.dataset.id;
+            if (e.target.checked) {
+                selectedSentences.add(sentenceId);
+            } else {
+                selectedSentences.delete(sentenceId);
+            }
+        });
+    });
+    
+    if (sentenceList.firstChild) {
+        sentenceList.firstChild.querySelector('.flex-1').click();
+    }
+}
+
+function showMessage(htmlContent, duration = null) {
+    messageContent.innerHTML = htmlContent;
+    messageModal.classList.remove('hidden');
+    if (duration) {
+        setTimeout(() => {
+            messageModal.classList.add('hidden');
+        }, duration);
+    }
+}
+
+function playSound() {
+    if (!activeSentenceElement) return;
+    speechSynthesis.cancel();
+    const textToSpeak = activeSentenceElement.dataset.fullSentence;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = 'en-US';
+    if (synthesisVoice) utterance.voice = synthesisVoice;
+    utterance.rate = 0.9;
+    speechSynthesis.speak(utterance);
+}
+
+function handleRecording() {
+    if (!activeSentenceElement) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showMessage('<p>お使いのブラウザは音声認識に対応していません。</p>', 3000);
+        return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.onstart = () => {
+         showMessage('<p class="text-xl">マイクに向かって話してください...</p><div class="animate-pulse text-red-500 text-4xl mt-4">●</div>');
+    };
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        evaluatePronunciation(transcript);
+    };
+    recognition.onerror = () => showMessage('<p>認識エラーが発生しました。</p>', 2000);
+    recognition.start();
+}
+
+function evaluatePronunciation(transcript) {
+    const originalText = activeSentenceElement.dataset.fullSentence.toLowerCase().replace(/[^\w\s]/g, '');
+    const spokenText = transcript.toLowerCase().replace(/[^\w\s]/g, '');
+    
+    const origWords = originalText.split(' ');
+    const spokenWords = spokenText.split(' ');
+    let matches = 0;
+    origWords.forEach(w => { if(spokenWords.includes(w)) matches++; });
+
+    const score = Math.min(100, Math.round((matches / origWords.length) * 100) + Math.floor(Math.random() * 10));
+
+    const messageHtml = `
+    <h3 class="text-xl font-bold mb-4">評価結果</h3>
+    <p class="text-6xl font-bold text-blue-600 mb-4">${score}<span class="text-xl">点</span></p>
+    <p class="text-sm text-gray-500 mb-2">発音: "${transcript}"</p>
+    <button onclick="document.getElementById('message-modal').classList.add('hidden')" class="mt-4 bg-blue-500 text-white py-2 px-6 rounded-lg">閉じる</button>
+    `;
+    showMessage(messageHtml);
+}
+
+function startQuiz() {
+    const quizData = [...chapterData].sort(() => 0.5 - Math.random()).slice(0, 10);
+    let currentIdx = 0;
+    let score = 0;
+
+    function nextQuestion() {
+        if (currentIdx >= quizData.length) {
+            quizContent.innerHTML = `<h3 class="text-2xl font-bold mb-4">終了！</h3><p class="text-5xl font-bold text-purple-600">${score * 10}点</p>`;
+            return;
+        }
+        const item = quizData[currentIdx];
+        const correct = findAnswerFormInSentence(item.en, item.answer).replace(/[.,!?]$/, '');
+        const options = [correct, ...chapterData.map(d => d.answer).filter(a => a !== item.answer).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+
+        quizContent.innerHTML = `
+            <p class="mb-2 text-gray-500">Q${currentIdx+1}</p>
+            <p class="text-lg font-bold mb-4">${item.ja}</p>
+            <p class="font-english text-xl mb-6 p-4 bg-gray-50 rounded-lg">${item.en.replace(correct, '______')}</p>
+            <div class="grid grid-cols-2 gap-3">
+                ${options.map(opt => `<button class="quiz-opt p-3 border rounded-lg hover:bg-blue-50 font-english">${opt}</button>`).join('')}
+            </div>
+        `;
+
+        document.querySelectorAll('.quiz-opt').forEach(btn => {
+            btn.onclick = () => {
+                if(btn.innerText === correct) score++;
+                currentIdx++;
+                nextQuestion();
+            };
+        });
+    }
+    quizModal.classList.remove('hidden');
+    nextQuestion();
+}
+
+// --- PDF Print Logic ---
+function openPrintWindow(bodyContent, title) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`<html><head><title>LEAP学習アプリ P4 W4</title><style>body{font-family:sans-serif;padding:40px;}h1{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;}.list{column-count:2;}li{margin-bottom:10px;}</style></head><body><h1>${title}</h1>${bodyContent}</body></html>`);
+    printWindow.document.close();
+    setTimeout(() => { printWindow.focus(); printWindow.print(); }, 500);
+}
+
+// --- Listeners ---
+toggleAnswerBtn.onclick = () => activeSentenceElement?.classList.toggle('show-answer');
+toggleExplanationBtn.onclick = () => {
+    const div = activeSentenceElement?.querySelector('.explanation');
+    if(div) div.style.display = div.style.display === 'block' ? 'none' : 'block';
+};
+playSoundBtn.onclick = playSound;
+recordBtn.onclick = handleRecording;
+startQuizBtn.onclick = startQuiz;
+closeQuizBtn.onclick = () => quizModal.classList.add('hidden');
+openPdfModalBtn.onclick = () => pdfModal.classList.remove('hidden');
+closeModalBtn.onclick = () => pdfModal.classList.add('hidden');
+
+selectAllCheckbox.onchange = (e) => {
+    document.querySelectorAll('.sentence-checkbox').forEach(cb => {
+        cb.checked = e.target.checked;
+        if(e.target.checked) selectedSentences.add(cb.dataset.id); else selectedSentences.delete(cb.dataset.id);
+    });
+};
+
+document.getElementById('download-list-btn').onclick = () => {
+    const items = Array.from(selectedSentences).map(id => chapterData.find(d => d.id === id));
+    const html = `<div class="list"><ul>${items.map(i => `<li><strong>${i.answer}</strong>: ${i.explanation}</li>`).join('')}</ul></div>`;
+    openPrintWindow(html, '重要語句リスト');
+};
+
+document.getElementById('download-en-quiz-btn').onclick = () => {
+    const items = Array.from(selectedSentences).map(id => chapterData.find(d => d.id === id));
+    const html = `<ol>${items.map(i => `<li>${i.ja} ( ________ )</li>`).join('')}</ol><hr><h3>解答</h3><p>${items.map(i => i.answer).join(', ')}</p>`;
+    openPrintWindow(html, '英語解答テスト');
+};
+
+// Initial Render
+document.addEventListener('DOMContentLoaded', renderChapter);
+</script>
+</body>
+</html>
